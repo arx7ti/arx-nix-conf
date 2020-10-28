@@ -25,7 +25,7 @@ in {
 
   nixpkgs.config = { allowUnfree = true; };
 
-  # networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "nixosAir"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
@@ -51,12 +51,6 @@ in {
       emacs-all-the-icons-fonts
     ];
     fontconfig = {
-      # hinting = {
-      #   autohint = false;
-      #   enable = true;
-      # };
-      # subpixel.lcdfilter = "default";
-      # antialias = true;
       defaultFonts = {
         serif = [ "Tinos" ];
         sansSerif = [ "Arimo" ];
@@ -77,7 +71,7 @@ in {
   # };
 
   # Set your time zone.
-  # time.timeZone = "Europe/Amsterdam";
+  time.timeZone = "Europe/Moscow";
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget

@@ -15,13 +15,23 @@ in rec {
   nixpkgs.config.allowUnfree = true;
   home = {
       packages = with pkgs; [
-        chromium unstable.tdesktop
-        direnv
+        chromium tdesktop
+        tmux tmate
+        texlive.combined.scheme-full
+        lm_sensors neofetch
+        ffmpeg
       ];
       file = {
         ".xinitrc".text = ''
           $HOME/.xsession
         '';
+        ".agignore".source = ./home/agignore;
+        ".tmate.conf".source = ./home/tmate.conf;
+        ".tmux.conf".source = ./home/tmux.conf;
+        ".config/tmux" = {
+          source = ./home/config/tmux;
+          recursive = true;
+        };
       };
   };
   # Let Home Manager install and manage itself.
@@ -29,16 +39,33 @@ in rec {
       emacs = {
           enable = true;
           extraPackages = (epkgs: with epkgs; [
-	    nix-mode exwm jupyter pdf-tools 
-	    lispy evil-lispy
-	        ] ++ (with unstable; [gnumake gcc cmake emacs-libvterm]));
+            nix-mode exwm jupyter pdf-tools
+            lispy evil-lispy emacs-libvterm
+	        ]);
       };
       git = {
           enable = true;
           userName = "Ilia Kamyshev";
           userEmail = "ikdesign2015@yandex.ru";
       };
-
+      direnv = {
+        enable = true;
+        enableBashIntegration = true;
+        enableZshIntegration = true;
+        enableNixDirenvIntegration = true;
+      };
+      fzf = {
+        enable = true;
+        defaultCommand = "fd --type f";
+        defaultOptions = [ "--height 40%" "--prompt »" ];
+        fileWidgetCommand = "fd --type f";
+        fileWidgetOptions = [ "--preview 'head {}'" ];
+        changeDirWidgetCommand = "fd --type d";
+        changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
+        historyWidgetOptions = [ "--tac" "--exact" ];
+        enableBashIntegration = true;
+        enableZshIntegration = true;
+      };
       zsh = {
         enable = true;
         autocd = true;
@@ -78,6 +105,9 @@ in rec {
         '';
       };
       home-manager.enable = true;
+  };
+  services = {
+    lorri.enable = true;
   };
   fonts.fontconfig = {
     enable = true;
