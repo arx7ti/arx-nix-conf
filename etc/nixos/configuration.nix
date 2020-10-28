@@ -3,37 +3,27 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-let 
+let
 	unstable = import <unstable> {};
 in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ./cachix.nix
     ];
 
   # Use the systemd-boot EFI boot loader.
   boot = {
-    kernel.sysctl = {
-      "net.ipv6.conf.all.disable_ipv6" = 1;
-      "net.ipv6.conf.default.disable_ipv6" = 1;
-      "net.ipv6.conf.lo.disable_ipv6" = 1;
-    };
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-    extraModprobeConfig = ''
-      options kvm ignore_msrs=1
-    '';
-    #initrd.availableKernelModules = [ "8821ce" ];
-    #initrd.kernelModules = [ "8821ce" ];
-    kernelModules = [ "nvidia-uvm" ];
-    extraModulePackages = with config.boot.kernelPackages; [
-      nvidia_x11
-      # rtl8821ce
-      # tp_smapi
-    ];
-    cleanTmpDir = true;
+	loader = {
+		systemd-boot.enable = true;
+		efi.canTouchEfiVariables = true;
+	};
+	kernelModules = ["nvidia-uvm"];
+	extraModulePackages = with config.boot.kernelPackages; [
+	  nvidia_x11
+	];
   };
+
+  nixpkgs.config = { allowUnfree = true; };
 
   # networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -41,29 +31,42 @@ in {
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
-  
-  # networking.interfaces.enp4s0.useDHCP = true;
-  # networking.interfaces.wlp5s0f3u1.useDHCP = true;
-  # networking.networkmanager.enable = false;
+  networking.useDHCP = false;
+  networking.interfaces.enp4s0.useDHCP = true;
+  networking.interfaces.wlp5s0f3u5.useDHCP = true;
+  networking.networkmanager.enable = true;
 
-  networking = {
-    hostName = "nixosAir"; # Define your hostname.
-    wireless = {
-     enable = false; # Enables wireless support via wpa_supplicant.
-     # interfaces = [ "???????" ];
-     # networks = { "???????" = { psk = "???????"; }; };
+  fonts = {
+    fonts = with pkgs; [
+      corefonts
+      dejavu_fonts
+      opensans-ttf
+      unifont
+      google-fonts
+      joypixels
+      paratype-pt-serif
+      paratype-pt-sans
+      powerline-fonts
+      iosevka
+      emacs-all-the-icons-fonts
+    ];
+    fontconfig = {
+      # hinting = {
+      #   autohint = false;
+      #   enable = true;
+      # };
+      # subpixel.lcdfilter = "default";
+      # antialias = true;
+      defaultFonts = {
+        serif = [ "Tinos" ];
+        sansSerif = [ "Arimo" ];
+        monospace = [ "Iosevka" ];
+      };
     };
-    networkmanager = {
-      # Enable networkmanager
-      enable = true; 
-    };
-    useDHCP = false;
-    interfaces.wlp5s0f3u1.useDHCP = true;
-    # firewall.allowedTCPPorts = [ 22 3020 3350 3389 ];
   };
 
   # Configure network proxy if necessary
-  # networking.proxy.default = "http://:@127.0.0.1:9050/";
+  # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
   # Select internationalisation properties.
@@ -74,48 +77,15 @@ in {
   # };
 
   # Set your time zone.
-  time.timeZone = "Europe/Moscow";
-  nixpkgs.config.allowUnfree = true;
-
-  fonts = {
-    fonts = with pkgs; [
-      opensans-ttf
-      dejavu_fonts
-      corefonts
-      powerline-fonts
-      iosevka
-      paratype-pt-serif
-      paratype-pt-sans
-      unifont
-      emacs-all-the-icons-fonts
-      joypixels
-      google-fonts
-      tor
-    ];
-    fontconfig = {
-      hinting = {
-        autohint = false;
-        enable = true;
-      };
-      subpixel.lcdfilter = "default";
-      antialias = true;
-      penultimate.enable = true;
-      defaultFonts = {
-        serif = [ "Tinos" ];
-        sansSerif = [ "Arimo" ];
-        monospace = [ "Iosevka" ];
-      };
-    };
-  };
+  # time.timeZone = "Europe/Amsterdam";
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    wget vim git curl which
-    htop ranger
-    lm_sensors compton
-    unstable.zsh
-    unstable.zsh-completions
+     wget vim which
+     htop curl git
+     pciutils
+     unstable.zsh unstable.zsh-completions
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -145,63 +115,37 @@ in {
   sound.enable = true;
   hardware.pulseaudio.enable = true;
 
-  systemd.services = {
-    nvidia-control-devices = {
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig.ExecStart = "${pkgs.linuxPackages.nvidia_x11.bin}/bin/nvidia-smi";
-    };
-    tune-usb-autosuspend = {
-      description = "Disable USB autosuspend";
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = { Type = "oneshot"; };
-      unitConfig.RequiresMountsFor = "/sys";
-      script = ''
-        echo -1 > /sys/module/usbcore/parameters/autosuspend
-      '';
-    };
-  };
-
-  hardware.opengl.driSupport32Bit = true;
-  virtualisation.docker = {
-    enable = true;
-    enableNvidia = true;
-  };
-
-  powerManagement.enable = true;
-
   # Enable the X11 windowing system.
-  services = {
-    tor = {
-      enable = true;
-      client.enable = true;
-    };
-    xserver = {
-      enable = true;
-      autorun = true;
-      layout = "us,ru";
-      videoDrivers = [ "nvidia" ];
-      # services.xserver.xkbOptions = "eurosign:e";
-
-      # Enable touchpad support.
-      # services.xserver.libinput.enable = true;
-
-      # Enable the KDE Desktop Environment.
-      displayManager.startx.enable = true;
-      desktopManager.plasma5.enable = false;
-    };
+  services.xserver = { 
+	enable = true;
+	autorun = true;
+	layout = "us,ru";
+	xkbOptions = "lv3:ralt_switch, grp_led:caps, caps:super";
+	videoDrivers = ["nvidia"];
+	displayManager.startx.enable = true;
+	desktopManager.plasma5.enable = false;
   };
+
+  systemd.services.nvidia-control-devices = {
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.ExecStart = "${pkgs.linuxPackages.nvidia_x11.bin}/bin/nvidia-smi";
+  };
+
+  # Enable touchpad support.
+  # services.xserver.libinput.enable = true;
+
+  # Enable the KDE Desktop Environment.
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.arxnovena = {
+  users.users.arx7ti = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "video" "audio" "disk" "networkmanager" "docker" ]; # Enable ‘sudo’ for the user.
+    createHome = true;
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" ]; # Enable ‘sudo’ for the user.
     group = "users";
-    home = "/home/arxnovena";
+    home = "/home/arx7ti";
     uid = 1000;
     shell = unstable.zsh;
   };
-
-  nix.sandboxPaths = [ "/dev/dri/card0" "/dev/dri/card1"  "/dev/dri/renderD128"  "/dev/dri/renderD129" ];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
