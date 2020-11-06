@@ -19,7 +19,11 @@ in rec {
         tmux tmate
         texlive.combined.scheme-full
         lm_sensors neofetch
-        ffmpeg
+        ffmpeg maim
+        zoom-us
+        sbcl
+        gcc glibc gnumake cmake
+        gsl hdf5 libev pkg-config zeromq
       ];
       file = {
         ".xinitrc".text = ''
