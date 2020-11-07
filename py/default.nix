@@ -1,7 +1,6 @@
 { pkgs ? import <nixpkgs> { } }:
 let
   venvDir = "./.venv-nix";
-  # These are necessary for taichi at runtime.
   libs = [
     pkgs.stdenv.cc.cc.lib
     pkgs.xorg.libX11
@@ -82,7 +81,7 @@ pkgs.mkShell {
     fi
     source "${venvDir}/bin/activate"
     pip install --upgrade pip
-    # TMPDIR=./.tmp pip install --cache-dir=./.tmp xgboost torchvision hy jedhy
+    # TMPDIR=./.tmp pip install --cache-dir=./.tmp xgboost torchvision calysto-hy
   '';
   XDG_DATA_DIRS = "${pkgs.qt5.full}:$XDG_DATA_DIRS";
   LD_LIBRARY_PATH = "${pkgs.stdenv.lib.makeLibraryPath libs}";
