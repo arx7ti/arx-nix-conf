@@ -7,6 +7,12 @@ in {
   allowUnfree = true;
   packageOverrides = pkgs:
     with pkgs; rec {
+      haskell-env = pkgs.haskell.packages.ghc865.ghcWithHoogle
+        (haskellPackages: with haskellPackages; [
+          unstable.haskell.packages.ghc865.haskell-language-server
+          cabal-install
+          brittany
+      ]);
       libffi-dev = stdenv.mkDerivation rec {
         name = "libffi-dev";
         env = buildEnv { name = name; paths = buildInputs; };
