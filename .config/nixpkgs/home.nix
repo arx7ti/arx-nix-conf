@@ -17,6 +17,7 @@ in rec {
       packages = with pkgs; [
         chromium tdesktop
         tmux tmate
+        zip unzip
         texlive.combined.scheme-full
         lm_sensors neofetch
         ffmpeg maim
@@ -24,6 +25,8 @@ in rec {
         sbcl
         gcc glibc gnumake cmake
         gsl hdf5 libev pkg-config zeromq
+        dmidecode 
+	ranger
       ];
       file = {
         ".xinitrc".text = ''
