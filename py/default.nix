@@ -15,8 +15,12 @@ pkgs.mkShell {
   buildInputs = (with pkgs; [
     python3
     qt5.full
+    twitterBootstrap
   ]) ++
   (with pkgs.python37Packages; [
+    flask
+    psycopg2
+    sqlalchemy
     black
     pandas
     sklearn-deap
@@ -28,6 +32,7 @@ pkgs.mkShell {
     jupyter
     jupyterlab
     geopandas
+    flask-bootstrap
   ]);
 
   nativeBuildInputs = [ pkgs.cudatoolkit_10_1 ];
