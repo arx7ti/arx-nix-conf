@@ -15,7 +15,7 @@ in rec {
   nixpkgs.config.allowUnfree = true;
   home = {
       packages = with pkgs; [
-        chromium tdesktop
+        chromium tdesktop 
         tmux tmate
         zip unzip
         texlive.combined.scheme-full
@@ -26,7 +26,9 @@ in rec {
         gcc glibc gnumake cmake
         gsl hdf5 libev pkg-config zeromq
         dmidecode 
-	ranger
+        ranger
+        nodePackages.prettier
+        unstable.nodePackages.pyright
       ];
       file = {
         ".xinitrc".text = ''
