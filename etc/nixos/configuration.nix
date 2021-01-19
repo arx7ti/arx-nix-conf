@@ -33,7 +33,7 @@ in {
   # replicates the default behaviour.
   networking.useDHCP = false;
   networking.interfaces.enp4s0.useDHCP = true;
-  networking.interfaces.wlp5s0f3u5.useDHCP = true;
+  # networking.interfaces.wlp5s0f3u5.useDHCP = true;
   networking.networkmanager.enable = true;
 
   fonts = {
@@ -76,6 +76,8 @@ in {
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
+     nut
+     usbutils
      wget vim which
      htop curl git
      pciutils
@@ -94,7 +96,8 @@ in {
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+  services.openssh.enable = true;
+  services.openssh.authorizedKeysFiles = ["~/.ssh/id_ed25519"];
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -104,6 +107,16 @@ in {
 
   # Enable CUPS to print documents.
   # services.printing.enable = true;
+  power.ups = {
+    enable = false;
+    # mode = "standalone";
+    # ups = {
+    #   ups = {
+    #     driver = "usbhid-ups";
+    #     port = "auto"; 
+    #   };
+    # };
+  };
 
   # Enable sound.
   sound.enable = true;
@@ -111,13 +124,90 @@ in {
 
   # Enable the X11 windowing system.
   services.xserver = { 
-	enable = true;
-	autorun = true;
-	layout = "us,ru";
-	xkbOptions = "lv3:ralt_switch, grp_led:caps, caps:super";
-	videoDrivers = ["nvidia"];
-	displayManager.startx.enable = true;
-	desktopManager.plasma5.enable = false;
+    enable = true;
+    autorun = true;
+    layout = "us,ru";
+    xkbOptions = "lv3:ralt_switch, grp_led:caps, caps:super";
+    videoDrivers = ["nvidia"];
+    displayManager.startx.enable = true;
+    desktopManager.plasma5.enable = false;
+    config = pkgs.lib.mkForce ''
+    Section "ServerLayout"
+        Identifier     "Layout[all]"
+        Screen      0  "Screen-nvidia[1]" 0 0
+        Screen      1  "Screen-nvidia[0]" RightOf "Screen-nvidia[1]"
+    EndSection
+
+    Section "Device"
+        Identifier     "Device-nvidia[0]"
+        Driver         "nvidia"
+        BusID          "PCI:8:0:0"
+    EndSection
+
+    Section "Device"
+        Identifier     "Device-nvidia[1]"
+        Driver         "nvidia"
+        BusID          "PCI:9:0:0"
+    EndSection
+
+    Section "Monitor"
+        Identifier     "multihead1"
+        Option         "DPMS"
+    EndSection
+
+    Section "Monitor"
+        Identifier     "multihead2"
+        Option         "DPMS"
+    EndSection
+
+    Section "Screen"
+        Identifier     "Screen-nvidia[0]"
+        Device         "Device-nvidia[0]"
+        Monitor        "multihead2"
+    EndSection
+
+    Section "Screen"
+        Identifier     "Screen-nvidia[1]"
+        Device         "Device-nvidia[1]"
+        Monitor        "multihead1"
+    EndSection
+    '';
+    # xrandrHeads = ["HDMI-0" "HDMI-1"];
+    # deviceSection = ''
+    #   BusID "PCI:8:0:0"
+    # '';
+    # screenSection = ''
+    # Option "Screen-nvidia[0]"
+    # '';
+    # extraConfig = ''
+    # Section "Device"
+    #   Identifier "Device-nvidia[1]"
+    #   Driver "nvidia"
+    #   BusID "PCI:9:0:0"
+    #   Option "monitor-HDMI-0" "multihead1"
+    #   Option "monitor-HDMI-0-1" "multihead2"
+    # EndSection
+
+    # Section "Screen"
+    #   Identifier "Screen-nvidia[1]"
+    #   Device "Device-nvidia[1]"
+    # EndSection
+    # '';
+  };
+
+services.postgresql = {
+    enable = true;
+    package = pkgs.postgresql_10;
+    enableTCPIP = true;
+    authentication = pkgs.lib.mkOverride 10 ''
+      local all all trust
+      host all all ::1/128 trust
+    '';
+    initialScript = pkgs.writeText "backend-initScript" ''
+      CREATE ROLE admin WITH LOGIN PASSWORD 'admin' CREATEDB;
+      CREATE DATABASE deepnilm;
+      GRANT ALL PRIVILEGES ON DATABASE deepnilm TO admin;
+    '';
   };
 
   systemd.services.nvidia-control-devices = {
@@ -134,7 +224,7 @@ in {
   users.users.arx7ti = {
     isNormalUser = true;
     createHome = true;
-    extraGroups = [ "wheel" "networkmanager" "video" "audio" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "nut" ]; # Enable ‘sudo’ for the user.
     group = "users";
     home = "/home/arx7ti";
     uid = 1000;
@@ -148,6 +238,5 @@ in {
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "20.03"; # Did you read the comment?
-
 }
 
